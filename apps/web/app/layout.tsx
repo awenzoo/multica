@@ -108,7 +108,7 @@ export default async function RootLayout({
 
   return (
     <html
-      lang="en"
+      lang="zh"
       suppressHydrationWarning
       className={cn("antialiased font-sans h-full", inter.variable, geistMono.variable, sourceSerif.variable)}
     >
