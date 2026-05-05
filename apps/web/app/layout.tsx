@@ -5,6 +5,8 @@ import { Toaster } from "@multica/ui/components/ui/sonner";
 import { cn } from "@multica/ui/lib/utils";
 import { WebProviders } from "@/components/web-providers";
 import { LocaleSync } from "@/components/locale-sync";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
 import "./globals.css";
 
 // Font stack: Inter for Latin UI text + system Chinese fonts for zh content.
@@ -97,11 +99,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const messages = await getMessages();
+
   return (
     <html
       lang="en"
@@ -110,12 +114,14 @@ export default function RootLayout({
     >
       <body className="h-full overflow-hidden">
         <LocaleSync />
-        <ThemeProvider>
-          <WebProviders>
-            {children}
-          </WebProviders>
-          <Toaster />
-        </ThemeProvider>
+        <NextIntlClientProvider messages={messages}>
+          <ThemeProvider>
+            <WebProviders>
+              {children}
+            </WebProviders>
+            <Toaster />
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

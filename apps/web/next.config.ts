@@ -1,9 +1,12 @@
 import type { NextConfig } from "next";
 import { config } from "dotenv";
 import { resolve } from "path";
+import createNextIntlPlugin from "next-intl/plugin";
 
 // Load root .env so REMOTE_API_URL is available to next.config.ts
 config({ path: resolve(__dirname, "../../.env") });
+
+const withNextIntl = createNextIntlPlugin("./i18n.ts");
 
 const remoteApiUrl = process.env.REMOTE_API_URL || "http://localhost:8080";
 const docsUrl = process.env.DOCS_URL || "http://localhost:4000";
@@ -69,4 +72,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

@@ -12,20 +12,7 @@ import { MembersTab } from "./members-tab";
 import { RepositoriesTab } from "./repositories-tab";
 import { LabsTab } from "./labs-tab";
 import { NotificationsTab } from "./notifications-tab";
-
-const accountTabs = [
-  { value: "profile", label: "Profile", icon: User },
-  { value: "appearance", label: "Appearance", icon: Palette },
-  { value: "notifications", label: "Notifications", icon: Bell },
-  { value: "tokens", label: "API Tokens", icon: Key },
-];
-
-const workspaceTabs = [
-  { value: "workspace", label: "General", icon: Settings },
-  { value: "repositories", label: "Repositories", icon: FolderGit2 },
-  { value: "labs", label: "Labs", icon: FlaskConical },
-  { value: "members", label: "Members", icon: Users },
-];
+import { useT } from "../../i18n/use-translations";
 
 export interface ExtraSettingsTab {
   value: string;
@@ -40,7 +27,22 @@ interface SettingsPageProps {
 }
 
 export function SettingsPage({ extraAccountTabs }: SettingsPageProps = {}) {
+  const t = useT();
   const workspaceName = useCurrentWorkspace()?.name;
+
+  const accountTabs = [
+    { value: "profile", label: t.settings("profile"), icon: User },
+    { value: "appearance", label: t.settings("appearance"), icon: Palette },
+    { value: "notifications", label: t.settings("notifications"), icon: Bell },
+    { value: "tokens", label: t.settings("apiTokens"), icon: Key },
+  ];
+
+  const workspaceTabs = [
+    { value: "workspace", label: t.settings("general"), icon: Settings },
+    { value: "repositories", label: t.settings("repositories"), icon: FolderGit2 },
+    { value: "labs", label: t.settings("labs"), icon: FlaskConical },
+    { value: "members", label: t.settings("members"), icon: Users },
+  ];
 
   return (
     <Tabs
@@ -50,11 +52,11 @@ export function SettingsPage({ extraAccountTabs }: SettingsPageProps = {}) {
     >
       {/* Left nav (stacks on top on mobile, sidebar on md+) */}
       <div className="shrink-0 md:w-52 border-b md:border-b-0 md:border-r md:overflow-y-auto p-3 md:p-4">
-        <h1 className="text-sm font-semibold mb-4 px-2">Settings</h1>
+        <h1 className="text-sm font-semibold mb-4 px-2">{t.settings("title")}</h1>
         <TabsList variant="line" className="flex-col items-stretch w-full">
           {/* My Account group */}
           <span className="px-2 pb-1 pt-2 text-xs font-medium text-muted-foreground">
-            My Account
+            {t.settings("myAccount")}
           </span>
           {accountTabs.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
@@ -71,7 +73,7 @@ export function SettingsPage({ extraAccountTabs }: SettingsPageProps = {}) {
 
           {/* Workspace group */}
           <span className="px-2 pb-1 pt-4 text-xs font-medium text-muted-foreground truncate">
-            {workspaceName ?? "Workspace"}
+            {workspaceName ?? t.sidebar("workspace")}
           </span>
           {workspaceTabs.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
