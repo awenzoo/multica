@@ -115,7 +115,9 @@ export function ConnectRemoteDialog({ onClose }: { onClose: () => void }) {
 // Step 1: Installation instructions
 // ---------------------------------------------------------------------------
 
-const INSTALL_CMD_UNIX = "curl -fsSL https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.sh | bash";
+const INSTALL_CMD_BREW = "brew install multica-ai/tap/multica";
+
+const INSTALL_CMD_CURL = "curl -fsSL https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.sh | bash";
 
 const INSTALL_CMD_WIN = "irm https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.ps1 | iex";
 
@@ -171,6 +173,7 @@ function InstructionsStep({
   onClose: () => void;
 }) {
   const [platform, setPlatform] = useState<"unix" | "windows">("unix");
+  const [unixMethod, setUnixMethod] = useState<"brew" | "curl">("brew");
 
   return (
     <>
@@ -214,9 +217,41 @@ function InstructionsStep({
                 Windows
               </button>
             </div>
+            {platform === "unix" && (
+              <div className="mb-1.5 flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setUnixMethod("brew")}
+                  className={`rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                    unixMethod === "brew"
+                      ? "bg-muted text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Homebrew
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUnixMethod("curl")}
+                  className={`rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                    unixMethod === "curl"
+                      ? "bg-muted text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  curl
+                </button>
+              </div>
+            )}
             <CodeBlock
-              code={platform === "windows" ? INSTALL_CMD_WIN : INSTALL_CMD_UNIX}
-              copyKey={`install-${platform}`}
+              code={
+                platform === "windows"
+                  ? INSTALL_CMD_WIN
+                  : unixMethod === "brew"
+                    ? INSTALL_CMD_BREW
+                    : INSTALL_CMD_CURL
+              }
+              copyKey={`install-${platform}-${platform === "unix" ? unixMethod : "ps1"}`}
               copied={copied}
               onCopy={onCopy}
             />
