@@ -80,6 +80,8 @@ export interface AgentTask {
   attempt?: number;
   /** Set when an issue comment triggered this task (@mention or assignee comment). */
   trigger_comment_id?: string;
+  /** Filesystem path on the daemon where the task executed. */
+  work_dir?: string;
   /**
    * Canonical short description of what triggered this task — snapshot
    * taken at creation time. For comment-triggered tasks it's the

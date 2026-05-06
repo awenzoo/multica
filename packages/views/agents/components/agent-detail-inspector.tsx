@@ -6,8 +6,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Camera, Loader2, Pencil } from "lucide-react";
+import { Camera, FolderOpen, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import type {
   Agent,
   AgentRuntime,
@@ -15,10 +16,12 @@ import type {
 } from "@multica/core/types";
 import {
   AGENT_DESCRIPTION_MAX_LENGTH,
+  agentTasksOptions,
   type AgentPresenceDetail,
 } from "@multica/core/agents";
 import { api } from "@multica/core/api";
 import { useFileUpload } from "@multica/core/hooks/use-file-upload";
+import { useWorkspaceId } from "@multica/core/hooks";
 import { timeAgo } from "@multica/core/utils";
 import { Button } from "@multica/ui/components/ui/button";
 import { ActorAvatar } from "../../common/actor-avatar";
@@ -91,6 +94,11 @@ export function AgentDetailInspector({
 }: InspectorProps) {
   const update = (data: Record<string, unknown>) => onUpdate(agent.id, data);
   const isOnline = runtime?.status === "online";
+
+  const wsId = useWorkspaceId();
+  const { data: tasks = [] } = useQuery(agentTasksOptions(wsId, agent.id));
+  // Tasks are already sorted by created_at DESC from the SQL query.
+  const latestWorkDir = tasks.find((t) => t.work_dir)?.work_dir ?? null;
 
   return (
     <aside className="flex w-full flex-col rounded-lg border bg-background md:h-full md:min-h-0 md:overflow-y-auto">
@@ -191,6 +199,25 @@ export function AgentDetailInspector({
           ))}
           <SkillAttach agent={agent} canEdit={canEdit} />
         </div>
+      </div>
+
+      {/* Path */}
+      <div className="flex flex-col px-5 py-4">
+        <div className="mb-2 flex items-center gap-2">
+          <FolderOpen className="h-3 w-3 text-muted-foreground" />
+          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            Path
+          </span>
+        </div>
+        {latestWorkDir ? (
+          <code className="break-all rounded-md bg-muted px-2 py-1 font-mono text-[11px] text-muted-foreground">
+            {latestWorkDir}
+          </code>
+        ) : (
+          <span className="text-[11px] italic text-muted-foreground/50">
+            No workspace path recorded yet
+          </span>
+        )}
       </div>
     </aside>
   );

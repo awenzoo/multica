@@ -172,6 +172,7 @@ type AgentTaskResponse struct {
 	AutopilotSource         string          `json:"autopilot_source,omitempty"`          // manual, schedule, webhook, or api
 	AutopilotTriggerPayload json.RawMessage `json:"autopilot_trigger_payload,omitempty"` // optional trigger payload for webhook/api runs
 	QuickCreatePrompt       string          `json:"quick_create_prompt,omitempty"`       // user's natural-language input for quick-create tasks
+	WorkDir                 string          `json:"work_dir,omitempty"`                  // filesystem path on the daemon where the task executed
 	Kind                    string          `json:"kind"`                                // discriminator: "comment" | "autopilot" | "chat" | "quick_create" | "direct" — used by the activity row to label tasks that have no linked issue
 }
 
@@ -197,7 +198,7 @@ func taskToResponse(t db.AgentTaskQueue) AgentTaskResponse {
 	if t.FailureReason.Valid {
 		failureReason = t.FailureReason.String
 	}
-	return AgentTaskResponse{
+	resp := AgentTaskResponse{
 		ID:               uuidToString(t.ID),
 		AgentID:          uuidToString(t.AgentID),
 		RuntimeID:        uuidToString(t.RuntimeID),
@@ -223,6 +224,10 @@ func taskToResponse(t db.AgentTaskQueue) AgentTaskResponse {
 		AutopilotRunID: uuidToString(t.AutopilotRunID),
 		Kind:           computeTaskKind(t),
 	}
+	if t.WorkDir.Valid {
+		resp.WorkDir = t.WorkDir.String
+	}
+	return resp
 }
 
 // computeTaskKind picks the source-discriminator string the activity UI uses
