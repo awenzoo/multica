@@ -8,7 +8,8 @@
     "agents": "智能体",
     "runtimes": "运行时",
     "skills": "Skill",
-    "settings": "设置"
+    "settings": "设置",
+    "chat": "聊天"
   },
   "help": {
     "trigger": "帮助",

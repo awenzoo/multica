@@ -31,6 +31,7 @@ import {
   FolderKanban,
   X,
   Zap,
+  MessageCircle,
 } from "lucide-react";
 import { WorkspaceAvatar } from "../workspace/workspace-avatar";
 import { ActorAvatar } from "@multica/ui/components/common/actor-avatar";
@@ -69,6 +70,7 @@ import { inboxKeys, deduplicateInboxItems } from "@multica/core/inbox/queries";
 import { api, ApiError } from "@multica/core/api";
 import { useModalStore } from "@multica/core/modals";
 import { useMyRuntimesNeedUpdate } from "@multica/core/runtimes/hooks";
+import { useChatStore } from "@multica/core/chat";
 import { pinListOptions } from "@multica/core/pins/queries";
 import { useDeletePin, useReorderPins } from "@multica/core/pins/mutations";
 import { issueDetailOptions } from "@multica/core/issues/queries";
@@ -623,6 +625,19 @@ export function AppSidebar({ topSlot, searchSlot, headerClassName, headerStyle }
                     </SidebarMenuItem>
                   );
                 })}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    className="text-muted-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground"
+                    onClick={() => {
+                      const store = useChatStore.getState();
+                      store.setOpen(true);
+                      store.setExpanded(true);
+                    }}
+                  >
+                    <MessageCircle />
+                    <span>{t(($) => $.nav.chat)}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
