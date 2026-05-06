@@ -55,9 +55,6 @@ export function ChatWindow() {
   const { pathname } = useNavigation();
   const wsId = useWorkspaceId();
   const isOpen = useChatStore((s) => s.isOpen);
-
-  // Don't render the floating window on the dedicated chat page
-  if (pathname.endsWith("/chat")) return null;
   const activeSessionId = useChatStore((s) => s.activeSessionId);
   const selectedAgentId = useChatStore((s) => s.selectedAgentId);
   const setOpen = useChatStore((s) => s.setOpen);
@@ -71,24 +68,14 @@ export function ChatWindow() {
   const { data: rawMessages, isLoading: messagesLoading } = useQuery(
     chatMessagesOptions(activeSessionId ?? ""),
   );
-  // When no active session, always show empty — don't use stale cache
   const messages = activeSessionId ? rawMessages ?? [] : [];
-  // Skeleton only shows for an un-cached session fetch. Cached switches
-  // return data synchronously — no flash. `enabled: false` (new chat)
-  // keeps isLoading false so the starter prompts aren't hidden.
   const showSkeleton = !!activeSessionId && messagesLoading;
 
-  // Server-authoritative pending task. Survives refresh / reopen / session
-  // switch because it's keyed on sessionId in the Query cache; WS events
-  // (chat:message / chat:done / task:*) keep it invalidated in real time.
-  //
-  // This is the SOLE source for pendingTaskId — no mirror in the store.
   const { data: pendingTask } = useQuery(
     pendingChatTaskOptions(activeSessionId ?? ""),
   );
   const pendingTaskId = pendingTask?.task_id ?? null;
 
-  // Check if current session is archived
   const currentSession = activeSessionId
     ? allSessions.find((s) => s.id === activeSessionId)
     : null;
@@ -104,30 +91,18 @@ export function ChatWindow() {
     (a) => !a.archived_at && canAssignAgent(a, user?.id, memberRole),
   );
 
-  // Resolve selected agent: stored preference → first available
   const activeAgent =
     availableAgents.find((a) => a.id === selectedAgentId) ??
     availableAgents[0] ??
     null;
 
-  // Three-state availability — "loading" stays neutral (no banner, no
-  // disable) so the input doesn't flash a fake "no agent" state in the
-  // few hundred ms before the agent list query resolves. Only `"none"`
-  // (server confirmed: zero usable agents) drives the disabled UI.
   const agentAvailability = useWorkspaceAgentAvailability();
   const noAgent = agentAvailability === "none";
 
-  // Presence drives both the avatar status dot (via ActorAvatar) and the
-  // OfflineBanner / TaskStatusPill availability copy. `useAgentPresenceDetail`
-  // returns "loading" while queries are still resolving — pass `undefined`
-  // downstream so banners and pill copy stay silent during loading rather
-  // than flash speculative offline text.
   const presenceDetail = useAgentPresenceDetail(wsId, activeAgent?.id);
   const availability =
     presenceDetail === "loading" ? undefined : presenceDetail.availability;
 
-  // Mount / unmount logging. ChatWindow lives in DashboardLayout, so this
-  // fires on layout mount (login / workspace switch / fresh page load).
   useEffect(() => {
     uiLogger.info("ChatWindow mount", {
       isOpen,
@@ -145,20 +120,6 @@ export function ChatWindow() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per mount
   }, []);
 
-  // Open intent is fully driven by `activeSessionId` in storage — no mount
-  // restore, no self-heal. Adding either reintroduces a "two signals
-  // describing one fact" race (the previous self-heal mis-cleared the
-  // freshly-created session because allSessions was still stale during the
-  // post-create invalidate-refetch window).
-
-  // WS events are handled globally in useRealtimeSync — the query cache
-  // stays current even when this window is closed. See packages/core/realtime/.
-
-  // Auto mark-as-read whenever the user is looking at a session with unread
-  // state: window open + a session active + has_unread → PATCH.
-  // has_unread comes from the list query; WS handlers invalidate it on
-  // chat:done so a reply arriving while the user watches triggers this
-  // effect again and is instantly cleared.
   const currentHasUnread =
     sessions.find((s) => s.id === activeSessionId)?.has_unread ?? false;
   useEffect(() => {
@@ -169,9 +130,6 @@ export function ChatWindow() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- markRead ref stable
   }, [isOpen, activeSessionId, currentHasUnread]);
 
-  // Focus-mode anchor: derived from route each render. Prepended to the
-  // outgoing message when focus is on; the anchor persists across sends
-  // (focus mode tracks the user's page, not a per-message attachment).
   const { candidate: anchorCandidate } = useRouteAnchorCandidate(wsId);
 
   const handleSend = useCallback(
@@ -206,11 +164,6 @@ export function ChatWindow() {
         setActiveSession(sessionId);
       }
 
-      // Optimistic burst — everything that gives the user "I sent a message
-      // and the agent is now working" feedback fires BEFORE the HTTP roundtrip.
-      // Pre-#status-pill the pending-task seed lived after `await
-      // sendChatMessage` and the pill blinked in a few hundred ms after the
-      // user's message — small but visible "did it actually send?" gap.
       const sentAt = new Date().toISOString();
       const optimistic: ChatMessage = {
         id: `optimistic-${Date.now()}`,
@@ -224,11 +177,6 @@ export function ChatWindow() {
         chatKeys.messages(sessionId),
         (old) => (old ? [...old, optimistic] : [optimistic]),
       );
-      // Seed the pending-task with a temporary id so the StatusPill mounts
-      // and starts ticking the instant the user clicks send. Real task_id
-      // and server-authoritative created_at land below; until then the pill
-      // is anchored to the local clock (drift is the request RTT, ~50–200ms,
-      // which doesn't change the rendered "Ns" value).
       qc.setQueryData<ChatPendingTask>(chatKeys.pendingTask(sessionId), {
         task_id: `optimistic-${optimistic.id}`,
         status: "queued",
@@ -242,9 +190,6 @@ export function ChatWindow() {
         messageId: result.message_id,
         taskId: result.task_id,
       });
-      // Replace the temporary task_id with the server's real one (so the WS
-      // task: handlers can match against it) and snap the anchor to the
-      // server's created_at — keeping the elapsed-seconds reading stable.
       qc.setQueryData<ChatPendingTask>(chatKeys.pendingTask(sessionId), {
         task_id: result.task_id,
         status: "queued",
@@ -267,17 +212,9 @@ export function ChatWindow() {
       apiLogger.debug("cancelTask skipped: no pending task");
       return;
     }
-    // Optimistic clear — pill disappears + input unlocks the moment the
-    // user clicks Stop, instead of after the HTTP roundtrip. WS
-    // task:cancelled will confirm later (no-op if cache is already empty);
-    // if the cancel POST fails because the task already finished, the
-    // assistant message arrives via task:completed → chat:done and renders
-    // normally. Either way the UI is in sync with reality without latency.
     apiLogger.info("cancelTask.start", { taskId: pendingTaskId, sessionId: activeSessionId });
     qc.setQueryData(chatKeys.pendingTask(activeSessionId), {});
     qc.invalidateQueries({ queryKey: chatKeys.messages(activeSessionId) });
-    // Fire-and-forget — UI is already in its post-cancel state. We log the
-    // outcome but never block on it.
     api.cancelTaskById(pendingTaskId).then(
       () => apiLogger.info("cancelTask.success", { taskId: pendingTaskId }),
       (err) =>
@@ -290,10 +227,6 @@ export function ChatWindow() {
 
   const handleSelectAgent = useCallback(
     (agent: Agent) => {
-      // No-op when clicking the already-active agent — don't clobber the
-      // current session just because the user closed the menu this way.
-      // Compare against activeAgent (what the UI shows), not selectedAgentId
-      // (which may be null / point to an archived agent on first load).
       if (activeAgent && agent.id === activeAgent.id) return;
       uiLogger.info("selectAgent", {
         from: selectedAgentId,
@@ -301,7 +234,6 @@ export function ChatWindow() {
         previousSessionId: activeSessionId,
       });
       setSelectedAgentId(agent.id);
-      // Reset session when switching agent
       setActiveSession(null);
     },
     [activeAgent, selectedAgentId, activeSessionId, setSelectedAgentId, setActiveSession],
@@ -317,8 +249,6 @@ export function ChatWindow() {
 
   const handleSelectSession = useCallback(
     (session: ChatSession) => {
-      // Sessions are bound 1:1 to an agent — picking a session from a
-      // different agent implicitly switches the agent too.
       if (activeAgent && session.agent_id !== activeAgent.id) {
         uiLogger.info("selectSession (cross-agent)", {
           from: activeAgent.id,
@@ -345,9 +275,10 @@ export function ChatWindow() {
   const windowRef = useRef<HTMLDivElement>(null);
   const { renderWidth, renderHeight, isAtMax, boundsReady, isDragging, toggleExpand, startDrag } = useChatResize(windowRef);
 
-  // Show the list (vs empty state) as soon as there's anything to display —
-  // a real message, or a pending task whose timeline will stream in.
   const hasMessages = messages.length > 0 || !!pendingTaskId;
+
+  // Don't render the floating window on the dedicated chat page
+  if (pathname.endsWith("/chat")) return null;
 
   const isVisible = isOpen && (isExpanded || boundsReady);
 
