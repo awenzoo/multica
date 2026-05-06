@@ -222,7 +222,7 @@ const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(
       setContent: (markdown: string) => {
         if (!editor) return;
         const processed = markdown ? preprocessMarkdown(markdown) : "";
-        editor.commands.setContent(processed, false, { contentType: "markdown" });
+        editor.commands.setContent(processed, { contentType: "markdown" });
         lastEmittedRef.current = stripBlobUrls(editor.getMarkdown()).trimEnd();
       },
       focus: () => {
