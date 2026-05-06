@@ -41,6 +41,7 @@ import {
 import { PropRow } from "../../common/prop-row";
 import { availabilityConfig } from "../presence";
 import { CharCounter } from "./char-counter";
+import { useT } from "../../i18n";
 import { ConcurrencyPicker } from "./inspector/concurrency-picker";
 import { ModelPicker } from "./inspector/model-picker";
 import { RuntimePicker } from "./inspector/runtime-picker";
@@ -92,6 +93,7 @@ export function AgentDetailInspector({
   canEdit,
   onUpdate,
 }: InspectorProps) {
+  const { t } = useT("agents");
   const update = (data: Record<string, unknown>) => onUpdate(agent.id, data);
   const isOnline = runtime?.status === "online";
 
@@ -116,8 +118,8 @@ export function AgentDetailInspector({
       {/* Properties — editable when canEdit. When the current user lacks
           permission, each picker self-renders a static read-only display so
           the value is visible but not interactive. */}
-      <Section label="Properties">
-        <PropRow label="Runtime" interactive={false}>
+      <Section label={t(($) => $.inspector.section_properties)}>
+        <PropRow label={t(($) => $.inspector.prop_runtime)} interactive={false}>
           <RuntimePicker
             value={agent.runtime_id}
             runtimes={runtimes}
@@ -127,7 +129,7 @@ export function AgentDetailInspector({
             onChange={(id) => update({ runtime_id: id })}
           />
         </PropRow>
-        <PropRow label="Model" interactive={false}>
+        <PropRow label={t(($) => $.inspector.prop_model)} interactive={false}>
           <ModelPicker
             runtimeId={agent.runtime_id}
             runtimeOnline={!!isOnline}
@@ -136,14 +138,14 @@ export function AgentDetailInspector({
             onChange={(m) => update({ model: m })}
           />
         </PropRow>
-        <PropRow label="Visibility" interactive={false}>
+        <PropRow label={t(($) => $.inspector.prop_visibility)} interactive={false}>
           <VisibilityPicker
             value={agent.visibility}
             canEdit={canEdit}
             onChange={(v) => update({ visibility: v })}
           />
         </PropRow>
-        <PropRow label="Concurrency" interactive={false}>
+        <PropRow label={t(($) => $.inspector.prop_concurrency)} interactive={false}>
           <ConcurrencyPicker
             value={agent.max_concurrent_tasks}
             canEdit={canEdit}
@@ -153,9 +155,9 @@ export function AgentDetailInspector({
       </Section>
 
       {/* Details — read-only (no hover, no chip styling — these aren't clickable) */}
-      <Section label="Details">
+      <Section label={t(($) => $.inspector.section_details)}>
         {owner && (
-          <PropRow label="Owner" interactive={false}>
+          <PropRow label={t(($) => $.inspector.prop_owner)} interactive={false}>
             <span className="flex min-w-0 items-center gap-1.5">
               <ActorAvatar
                 actorType="member"
@@ -166,12 +168,12 @@ export function AgentDetailInspector({
             </span>
           </PropRow>
         )}
-        <PropRow label="Created" interactive={false}>
+        <PropRow label={t(($) => $.inspector.prop_created)} interactive={false}>
           <span className="text-muted-foreground">
             {timeAgo(agent.created_at)}
           </span>
         </PropRow>
-        <PropRow label="Updated" interactive={false}>
+        <PropRow label={t(($) => $.inspector.prop_updated)} interactive={false}>
           <span className="text-muted-foreground">
             {timeAgo(agent.updated_at)}
           </span>
@@ -182,7 +184,7 @@ export function AgentDetailInspector({
       <div className="flex flex-col border-b px-5 py-4">
         <div className="mb-2 flex items-center gap-2">
           <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Skills
+            {t(($) => $.inspector.section_skills)}
           </span>
           <span className="font-mono text-[10px] tabular-nums text-muted-foreground/70">
             {agent.skills.length}
@@ -259,6 +261,7 @@ function AvatarEditor({
   canEdit: boolean;
   onUpdate: (data: Record<string, unknown>) => Promise<void>;
 }) {
+  const { t } = useT("agents");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { upload, uploading } = useFileUpload(api);
 
@@ -283,9 +286,9 @@ function AvatarEditor({
       const result = await upload(file);
       if (!result) return;
       await onUpdate({ avatar_url: result.link });
-      toast.success("Avatar updated");
+      toast.success(t(($) => $.inspector.avatar_updated_toast));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to upload avatar");
+      toast.error(err instanceof Error ? err.message : t(($) => $.inspector.avatar_upload_failed_toast));
     }
   };
 
@@ -298,7 +301,7 @@ function AvatarEditor({
         className="group relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onClick={() => fileInputRef.current?.click()}
         disabled={uploading}
-        aria-label="Change avatar"
+        aria-label={t(($) => $.inspector.change_avatar_aria)}
       >
         <ActorAvatar
           actorType="agent"
@@ -334,6 +337,7 @@ function NameAndDescription({
   canEdit: boolean;
   onUpdate: (data: Record<string, unknown>) => Promise<void>;
 }) {
+  const { t } = useT("agents");
   if (!canEdit) {
     return (
       <div className="flex flex-col gap-1">
@@ -346,7 +350,7 @@ function NameAndDescription({
           </span>
         ) : (
           <span className="text-xs italic leading-relaxed text-muted-foreground/50">
-            No description
+            {t(($) => $.inspector.no_description_placeholder)}
           </span>
         )}
       </div>
@@ -359,9 +363,9 @@ function NameAndDescription({
         value={agent.name}
         onSave={(v) => onUpdate({ name: v.trim() })}
         kind="input"
-        title="Rename agent"
-        placeholder="Agent name"
-        validate={(v) => (v.trim().length > 0 ? null : "Name is required")}
+        title={t(($) => $.inspector.rename_title)}
+        placeholder={t(($) => $.inspector.rename_placeholder)}
+        validate={(v) => (v.trim().length > 0 ? null : t(($) => $.inspector.rename_required))}
       >
         {(triggerProps) => (
           <button
@@ -402,6 +406,7 @@ function DescriptionEditor({
   value: string;
   onSave: (next: string) => Promise<void>;
 }) {
+  const { t } = useT("agents");
   const [open, setOpen] = useState(false);
 
   return (
@@ -414,7 +419,7 @@ function DescriptionEditor({
         {value ? (
           <span className="text-muted-foreground">{value}</span>
         ) : (
-          <span className="italic text-muted-foreground/50">No description</span>
+          <span className="italic text-muted-foreground/50">{t(($) => $.inspector.no_description_placeholder)}</span>
         )}
         <Pencil className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground/0 transition-colors group-hover:text-muted-foreground" />
       </button>
@@ -443,6 +448,7 @@ function DescriptionEditorBody({
   onSave: (next: string) => Promise<void>;
   onClose: () => void;
 }) {
+  const { t } = useT("agents");
   const [draft, setDraft] = useState(initialValue);
   const [saving, setSaving] = useState(false);
 
@@ -466,14 +472,14 @@ function DescriptionEditorBody({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Edit description</DialogTitle>
+        <DialogTitle>{t(($) => $.inspector.edit_description_title)}</DialogTitle>
       </DialogHeader>
       <div className="flex flex-col gap-2">
         <textarea
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="What does this agent do?"
+          placeholder={t(($) => $.inspector.description_placeholder)}
           rows={6}
           onKeyDown={(e) => {
             if (e.key === "Escape") onClose();
@@ -493,14 +499,14 @@ function DescriptionEditorBody({
           onClick={onClose}
           disabled={saving}
         >
-          Cancel
+          {t(($) => $.inspector.cancel)}
         </Button>
         <Button
           size="sm"
           onClick={() => void commit()}
           disabled={saving || overLimit || !dirty}
         >
-          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save"}
+          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t(($) => $.inspector.save)}
         </Button>
       </DialogFooter>
     </>
@@ -529,6 +535,7 @@ function InlineEditPopover({
     onClick: (e: React.MouseEvent) => void;
   }) => ReactNode;
 }) {
+  const { t } = useT("agents");
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(value);
   const [saving, setSaving] = useState(false);
@@ -618,7 +625,7 @@ function InlineEditPopover({
               onClick={() => setOpen(false)}
               disabled={saving}
             >
-              Cancel
+              {t(($) => $.inspector.cancel)}
             </Button>
             <Button
               size="sm"
@@ -628,7 +635,7 @@ function InlineEditPopover({
               {saving ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                "Save"
+                t(($) => $.inspector.save)
               )}
             </Button>
           </div>
@@ -647,22 +654,20 @@ function PresenceBadge({
 }: {
   presence: AgentPresenceDetail | null | undefined;
 }) {
+  const { t } = useT("agents");
   if (!presence) {
     return (
       <span className="inline-flex h-5 w-20 animate-pulse rounded-md bg-muted" />
     );
   }
   const av = availabilityConfig[presence.availability];
-  // Last-task chip / failure copy intentionally omitted on the detail page
-  // — the Recent work panel below shows the same data with full context.
-
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <span
         className={`inline-flex items-center gap-1.5 rounded-md border px-1.5 py-0.5 text-xs ${av.textClass}`}
       >
         <span className={`h-1.5 w-1.5 rounded-full ${av.dotClass}`} />
-        {av.label}
+        {t(($) => $.availability[presence.availability])}
       </span>
     </div>
   );

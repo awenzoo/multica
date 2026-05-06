@@ -12,21 +12,19 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@multica/ui/components/ui/tooltip";
-import { useNavigation } from "../../navigation";
+import { useT } from "../../i18n";
 
 const logger = createLogger("chat.ui");
 
 export function ChatFab() {
+  const { t } = useT("chat");
   const wsId = useWorkspaceId();
   const isOpen = useChatStore((s) => s.isOpen);
   const toggle = useChatStore((s) => s.toggle);
   const { data: sessions = [] } = useQuery(chatSessionsOptions(wsId));
   const { data: pending } = useQuery(pendingChatTasksOptions(wsId));
-  const { pathname } = useNavigation();
 
-  // Hide FAB when user is on the dedicated chat page
   if (isOpen) return null;
-  if (pathname.endsWith("/chat")) return null;
 
   const unreadSessionCount = sessions.filter((s) => s.has_unread).length;
   const isRunning = (pending?.tasks ?? []).length > 0;
@@ -38,10 +36,10 @@ export function ChatFab() {
 
   // Tooltip text communicates the state that isn't carried by the icon/badge.
   const tooltip = isRunning
-    ? "Multica is working..."
+    ? t(($) => $.fab.running)
     : unreadSessionCount > 0
-      ? `${unreadSessionCount} unread ${unreadSessionCount === 1 ? "chat" : "chats"}`
-      : "Ask Multica";
+      ? t(($) => $.fab.unread, { count: unreadSessionCount })
+      : t(($) => $.fab.default);
 
   return (
     <Tooltip>

@@ -1,12 +1,16 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Inter, Geist_Mono, Source_Serif_4 } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@multica/ui/components/ui/sonner";
 import { cn } from "@multica/ui/lib/utils";
 import { WebProviders } from "@/components/web-providers";
-import { LocaleSync } from "@/components/locale-sync";
-import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
+import {
+  DEFAULT_LOCALE,
+  SUPPORTED_LOCALES,
+  type SupportedLocale,
+} from "@multica/core/i18n";
+import { RESOURCES } from "@multica/views/locales";
 import "./globals.css";
 
 // Font stack: Inter for Latin UI text + system Chinese fonts for zh content.
@@ -99,29 +103,44 @@ export const metadata: Metadata = {
   },
 };
 
+function isSupportedLocale(value: string | null): value is SupportedLocale {
+  return value !== null && (SUPPORTED_LOCALES as readonly string[]).includes(value);
+}
+
+// HTML lang attribute uses BCP-47 region tags that screen readers and font
+// stacks recognize widely. i18next keeps `zh-Hans` as its internal locale
+// (script subtag is what we actually translate against), but the html element
+// expects a region-flavoured tag for accessibility tooling and CJK fallback.
+const HTML_LANG: Record<SupportedLocale, string> = {
+  en: "en",
+  "zh-Hans": "zh-CN",
+};
+
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const messages = await getMessages();
+  const h = await headers();
+  const headerLocale = h.get("x-multica-locale");
+  const locale: SupportedLocale = isSupportedLocale(headerLocale)
+    ? headerLocale
+    : DEFAULT_LOCALE;
+  const resources = { [locale]: RESOURCES[locale] };
 
   return (
     <html
-      lang="zh"
+      lang={HTML_LANG[locale]}
       suppressHydrationWarning
       className={cn("antialiased font-sans h-full", inter.variable, geistMono.variable, sourceSerif.variable)}
     >
       <body className="h-full overflow-hidden">
-        <LocaleSync />
-        <NextIntlClientProvider messages={messages}>
-          <ThemeProvider>
-            <WebProviders>
-              {children}
-            </WebProviders>
-            <Toaster />
-          </ThemeProvider>
-        </NextIntlClientProvider>
+        <ThemeProvider>
+          <WebProviders locale={locale} resources={resources}>
+            {children}
+          </WebProviders>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
