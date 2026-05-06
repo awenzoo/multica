@@ -31,6 +31,7 @@ import {
   FolderKanban,
   X,
   Zap,
+  MessageSquare,
 } from "lucide-react";
 import { WorkspaceAvatar } from "../workspace/workspace-avatar";
 import { ActorAvatar } from "@multica/ui/components/common/actor-avatar";
@@ -102,6 +103,7 @@ const EMPTY_INBOX: Awaited<ReturnType<typeof api.listInbox>> = [];
 type NavKey =
   | "inbox"
   | "myIssues"
+  | "chat"
   | "issues"
   | "projects"
   | "autopilots"
@@ -115,6 +117,7 @@ type NavItem = { key: NavKey; icon: typeof Inbox };
 const personalNavKeys: NavItem[] = [
   { key: "inbox", icon: Inbox },
   { key: "myIssues", icon: CircleUser },
+  { key: "chat", icon: MessageSquare },
 ];
 
 const workspaceNavKeys: NavItem[] = [
@@ -133,6 +136,7 @@ const configureNavKeys: NavItem[] = [
 const navLabelMap: Record<NavKey, string> = {
   inbox: "inbox",
   myIssues: "myIssues",
+  chat: "chat",
   issues: "issues",
   projects: "projects",
   autopilots: "autopilot",

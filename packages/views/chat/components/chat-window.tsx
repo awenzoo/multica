@@ -46,13 +46,18 @@ import { ChatResizeHandles } from "./chat-resize-handles";
 import { useChatResize } from "./use-chat-resize";
 import { createLogger } from "@multica/core/logger";
 import type { Agent, ChatMessage, ChatPendingTask, ChatSession } from "@multica/core/types";
+import { useNavigation } from "../../navigation";
 
 const uiLogger = createLogger("chat.ui");
 const apiLogger = createLogger("chat.api");
 
 export function ChatWindow() {
+  const { pathname } = useNavigation();
   const wsId = useWorkspaceId();
   const isOpen = useChatStore((s) => s.isOpen);
+
+  // Don't render the floating window on the dedicated chat page
+  if (pathname.endsWith("/chat")) return null;
   const activeSessionId = useChatStore((s) => s.activeSessionId);
   const selectedAgentId = useChatStore((s) => s.selectedAgentId);
   const setOpen = useChatStore((s) => s.setOpen);

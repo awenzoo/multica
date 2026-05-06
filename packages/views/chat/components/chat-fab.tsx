@@ -12,6 +12,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@multica/ui/components/ui/tooltip";
+import { useNavigation } from "../../navigation";
 
 const logger = createLogger("chat.ui");
 
@@ -21,8 +22,11 @@ export function ChatFab() {
   const toggle = useChatStore((s) => s.toggle);
   const { data: sessions = [] } = useQuery(chatSessionsOptions(wsId));
   const { data: pending } = useQuery(pendingChatTasksOptions(wsId));
+  const { pathname } = useNavigation();
 
+  // Hide FAB when user is on the dedicated chat page
   if (isOpen) return null;
+  if (pathname.endsWith("/chat")) return null;
 
   const unreadSessionCount = sessions.filter((s) => s.has_unread).length;
   const isRunning = (pending?.tasks ?? []).length > 0;
