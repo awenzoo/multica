@@ -1,7 +1,8 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@multica/core/api";
 import { AppSidebar } from "./app-sidebar";
+import { renderWithI18n } from "../test/i18n";
 
 const { detail, deletePin, pins } = vi.hoisted(() => ({
   detail: { current: { isPending: false, isError: false, data: null as unknown, error: null as unknown } },
@@ -43,7 +44,7 @@ vi.mock("@multica/ui/components/ui/sidebar", () => ({
   SidebarGroupLabel: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   SidebarHeader: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   SidebarMenu: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  SidebarMenuButton: ({ children }: { children: React.ReactNode }) => <button type="button">{children}</button>,
+  SidebarMenuButton: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => <button type="button" onClick={onClick}>{children}</button>,
   SidebarMenuItem: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   SidebarRail: () => null,
 }));
@@ -107,6 +108,16 @@ vi.mock("@multica/core/pins/mutations", () => ({ useDeletePin: () => ({ mutate: 
 vi.mock("@multica/core/pins/queries", () => ({ pinListOptions: () => ({ queryKey: ["pins"] }) }));
 vi.mock("@multica/core/projects/queries", () => ({ projectDetailOptions: () => ({ queryKey: ["project"] }) }));
 vi.mock("@multica/core/runtimes/hooks", () => ({ useMyRuntimesNeedUpdate: () => false }));
+const { chatSetOpen, chatSetExpanded } = vi.hoisted(() => ({
+  chatSetOpen: vi.fn(),
+  chatSetExpanded: vi.fn(),
+}));
+vi.mock("@multica/core/chat", () => {
+  const state = { isOpen: false, isExpanded: false, setOpen: chatSetOpen, setExpanded: chatSetExpanded };
+  const store = (selector: (s: typeof state) => unknown) => selector(state);
+  store.getState = () => state;
+  return { useChatStore: store };
+});
 vi.mock("@multica/core/workspace/queries", () => ({
   myInvitationListOptions: () => ({ queryKey: ["invitations"] }),
   workspaceKeys: { myInvitations: () => ["invitations"] },
@@ -145,5 +156,19 @@ describe("PinRow", () => {
     detail.current = { isPending: false, isError: false, data: { identifier: "MUL-123", title: "Keep this pin", status: "todo" }, error: null };
     render(<AppSidebar />);
     expect(await screen.findByText("MUL-123 Keep this pin")).toBeInTheDocument();
+  });
+});
+
+describe("ChatMenuItem", () => {
+  it("renders the Chat menu item", () => {
+    renderWithI18n(<AppSidebar />);
+    expect(screen.getByText("Chat")).toBeInTheDocument();
+  });
+
+  it("calls setOpen and setExpanded on click", () => {
+    renderWithI18n(<AppSidebar />);
+    fireEvent.click(screen.getByText("Chat"));
+    expect(chatSetOpen).toHaveBeenCalledWith(true);
+    expect(chatSetExpanded).toHaveBeenCalledWith(true);
   });
 });

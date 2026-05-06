@@ -321,6 +321,30 @@ function PinSkeleton() {
   );
 }
 
+function ChatMenuItem() {
+  const { t } = useT("layout");
+  const isOpen = useChatStore((s) => s.isOpen);
+  const isExpanded = useChatStore((s) => s.isExpanded);
+  const isActive = isOpen && isExpanded;
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        isActive={isActive}
+        className="text-muted-foreground hover:not-data-active:bg-sidebar-accent/70 data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground"
+        onClick={() => {
+          const store = useChatStore.getState();
+          store.setOpen(true);
+          store.setExpanded(true);
+        }}
+      >
+        <MessageCircle />
+        <span>{t(($) => $.nav.chat)}</span>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+}
+
 interface AppSidebarProps {
   /** Rendered above SidebarHeader (e.g. desktop traffic light spacer) */
   topSlot?: React.ReactNode;
@@ -578,6 +602,7 @@ export function AppSidebar({ topSlot, searchSlot, headerClassName, headerStyle }
             </SidebarMenuItem>
           </SidebarMenu>
           <SidebarMenu>
+            <ChatMenuItem />
             {searchSlot && (
               <SidebarMenuItem>
                 {searchSlot}
@@ -625,19 +650,6 @@ export function AppSidebar({ topSlot, searchSlot, headerClassName, headerStyle }
                     </SidebarMenuItem>
                   );
                 })}
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    className="text-muted-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground"
-                    onClick={() => {
-                      const store = useChatStore.getState();
-                      store.setOpen(true);
-                      store.setExpanded(true);
-                    }}
-                  >
-                    <MessageCircle />
-                    <span>{t(($) => $.nav.chat)}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
