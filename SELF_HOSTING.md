@@ -16,9 +16,21 @@ Each user who runs AI agents locally also installs the **`multica` CLI** and run
 
 Two commands to set up everything — server, CLI, and configuration:
 
+**macOS / Linux:**
+
 ```bash
 # 1. Install CLI + provision the self-host server
 curl -fsSL https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.sh | bash -s -- --with-server
+
+# 2. Configure CLI, authenticate, and start the daemon
+multica setup self-host
+```
+
+**Windows (PowerShell):**
+
+```powershell
+# 1. Install CLI + provision the self-host server
+$env:MULTICA_MODE="with-server"; irm https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.ps1 | iex
 
 # 2. Configure CLI, authenticate, and start the daemon
 multica setup self-host
@@ -30,10 +42,16 @@ Open http://localhost:3000. To log in, configure `RESEND_API_KEY` in `.env` for 
 
 > **Prerequisites:** Docker and Docker Compose must be installed. The script checks for this and provides install links if missing.
 >
-> **CLI only?** If the self-host server is already running and you only need the CLI on a macOS/Linux machine, install it with Homebrew:
+> **CLI only?** If the self-host server is already running and you only need the CLI:
 >
 > ```bash
+> # macOS / Linux
 > brew install multica-ai/tap/multica
+> ```
+>
+> ```powershell
+> # Windows (PowerShell)
+> irm https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.ps1 | iex
 > ```
 
 ---
@@ -85,8 +103,16 @@ Each team member who wants to run AI agents locally needs to:
 
 ### a) Install the CLI and an AI agent
 
+**macOS / Linux:**
+
 ```bash
 brew install multica-ai/tap/multica
+```
+
+**Windows (PowerShell):**
+
+```powershell
+irm https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.ps1 | iex
 ```
 
 You also need at least one AI agent CLI installed:
