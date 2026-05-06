@@ -115,7 +115,9 @@ export function ConnectRemoteDialog({ onClose }: { onClose: () => void }) {
 // Step 1: Installation instructions
 // ---------------------------------------------------------------------------
 
-const INSTALL_CMD = "curl -fsSL https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.sh | bash";
+const INSTALL_CMD_UNIX = "curl -fsSL https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.sh | bash";
+
+const INSTALL_CMD_WIN = "irm https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.ps1 | iex";
 
 const CONFIGURE_CMD = `multica config set server_url http://ssc.wenping.asia:13000
 multica config set app_url http://ssc.wenping.asia:13000`;
@@ -168,6 +170,8 @@ function InstructionsStep({
   onNext: () => void;
   onClose: () => void;
 }) {
+  const [platform, setPlatform] = useState<"unix" | "windows">("unix");
+
   return (
     <>
       <DialogHeader>
@@ -186,9 +190,33 @@ function InstructionsStep({
               <Terminal className="h-3.5 w-3.5" />
               1. Install the CLI
             </div>
+            <div className="mb-1.5 flex gap-1">
+              <button
+                type="button"
+                onClick={() => setPlatform("unix")}
+                className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                  platform === "unix"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                macOS / Linux
+              </button>
+              <button
+                type="button"
+                onClick={() => setPlatform("windows")}
+                className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                  platform === "windows"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Windows
+              </button>
+            </div>
             <CodeBlock
-              code={INSTALL_CMD}
-              copyKey="install"
+              code={platform === "windows" ? INSTALL_CMD_WIN : INSTALL_CMD_UNIX}
+              copyKey={`install-${platform}`}
               copied={copied}
               onCopy={onCopy}
             />
