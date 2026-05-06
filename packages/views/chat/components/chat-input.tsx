@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@multica/ui/lib/utils";
 import { ContentEditor, type ContentEditorRef } from "../../editor";
 import { SubmitButton } from "@multica/ui/components/common/submit-button";
@@ -57,6 +57,18 @@ export function ChatInput({
   const setInputDraft = useChatStore((s) => s.setInputDraft);
   const clearInputDraft = useChatStore((s) => s.clearInputDraft);
   const [isEmpty, setIsEmpty] = useState(!inputDraft.trim());
+  const prevDraftKeyRef = useRef(draftKey);
+
+  // Update editor content when session/agent changes, instead of remounting
+  // via key prop. Remounting crashes Tiptap's internal useEffect during the
+  // commit phase (Cannot read properties of undefined (reading 'length')).
+  useEffect(() => {
+    if (prevDraftKeyRef.current !== draftKey) {
+      prevDraftKeyRef.current = draftKey;
+      editorRef.current?.setContent(inputDraft);
+      setIsEmpty(!inputDraft.trim());
+    }
+  }, [draftKey, inputDraft]);
 
   const handleSend = () => {
     const content = editorRef.current?.getMarkdown()?.replace(/(\n\s*)+$/, "").trim();
@@ -123,9 +135,6 @@ export function ChatInput({
         {topSlot}
         <div className="flex-1 min-h-0 overflow-y-auto px-3 py-2">
           <ContentEditor
-            // Remount the editor when the active session changes so its
-            // uncontrolled defaultValue picks up the new session's draft.
-            key={draftKey}
             ref={editorRef}
             defaultValue={inputDraft}
             placeholder={placeholder}

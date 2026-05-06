@@ -97,6 +97,9 @@ interface ContentEditorProps {
 interface ContentEditorRef {
   getMarkdown: () => string;
   clearContent: () => void;
+  /** Replace editor content with markdown. Used by ChatInput to switch sessions
+   *  without remounting the entire editor (which crashes Tiptap's internals). */
+  setContent: (markdown: string) => void;
   focus: () => void;
   /** Drop focus from the editor — used by chat after send so the caret
    *  stops competing with the StatusPill / streaming reply for the user's
@@ -215,6 +218,12 @@ const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(
       getMarkdown: () => stripBlobUrls(editor?.getMarkdown() ?? ""),
       clearContent: () => {
         editor?.commands.clearContent();
+      },
+      setContent: (markdown: string) => {
+        if (!editor) return;
+        const processed = markdown ? preprocessMarkdown(markdown) : "";
+        editor.commands.setContent(processed, false, { contentType: "markdown" });
+        lastEmittedRef.current = stripBlobUrls(editor.getMarkdown()).trimEnd();
       },
       focus: () => {
         editor?.commands.focus();
