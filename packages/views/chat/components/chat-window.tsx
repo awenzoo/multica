@@ -53,6 +53,7 @@ const apiLogger = createLogger("chat.api");
 
 export function ChatWindow() {
   const { pathname } = useNavigation();
+  const isHidden = pathname.endsWith("/chat");
   const wsId = useWorkspaceId();
   const isOpen = useChatStore((s) => s.isOpen);
   const activeSessionId = useChatStore((s) => s.activeSessionId);
@@ -123,12 +124,12 @@ export function ChatWindow() {
   const currentHasUnread =
     sessions.find((s) => s.id === activeSessionId)?.has_unread ?? false;
   useEffect(() => {
-    if (!isOpen || !activeSessionId) return;
+    if (isHidden || !isOpen || !activeSessionId) return;
     if (!currentHasUnread) return;
     uiLogger.info("auto markRead", { sessionId: activeSessionId });
     markRead.mutate(activeSessionId);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- markRead ref stable
-  }, [isOpen, activeSessionId, currentHasUnread]);
+  }, [isOpen, activeSessionId, currentHasUnread, isHidden]);
 
   const { candidate: anchorCandidate } = useRouteAnchorCandidate(wsId);
 
@@ -278,7 +279,7 @@ export function ChatWindow() {
   const hasMessages = messages.length > 0 || !!pendingTaskId;
 
   // Don't render the floating window on the dedicated chat page
-  if (pathname.endsWith("/chat")) return null;
+  if (isHidden) return null;
 
   const isVisible = isOpen && (isExpanded || boundsReady);
 
